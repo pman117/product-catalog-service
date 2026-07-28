@@ -1,0 +1,125 @@
+# =============================================================================
+# docker-compose.yml — local development stack for product-catalog-service
+# Brings up the app + MySQL together with one command: docker compose up
+#
+# This is intentionally minimal for NOW (Phase 1 complete state). Commented
+# stubs are included for Redis (Phase 2C) and Prometheus/Grafana (Phase 2A)
+# so you extend this file in place as each phase lands, rather than writing
+# a new compose file each time.
+# =============================================================================
+
+version: "3.9"
+
+services:
+
+  # ---------------------------------------------------------------------
+  # The Spring Boot application itself, built from the Dockerfile in this
+  # same directory.
+  # ---------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: catalog-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/product_catalog
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      # Phase 2B (when JWT lands): inject the signing secret from a .env
+      # file (git-ignored), never hardcode it here.
+      # JWT_SECRET: ${JWT_SECRET}
+      # Phase 2C (when Redis lands): point the app at the redis service below.
+      # SPRING_REDIS_HOST: redis
+      # SPRING_REDIS_PORT: 6379
+    networks:
+      - catalog-net
+
+  # ---------------------------------------------------------------------
+  # MySQL 8.1 — matches the Testcontainers MySQL version used in your
+  # integration tests, so local dev behavior matches CI/test behavior.
+  # ---------------------------------------------------------------------
+  mysql:
+    image: mysql:8.1
+    container_name: catalog-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: product_catalog
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - catalog-net
+
+  # ---------------------------------------------------------------------
+  # PHASE 2C STUB — uncomment when Redis cache-aside is implemented.
+  # ---------------------------------------------------------------------
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: catalog-redis
+  #   ports:
+  #     - "6379:6379"
+  #   networks:
+  #     - catalog-net
+
+  # ---------------------------------------------------------------------
+  # PHASE 2A STUB — uncomment when Micrometer/Prometheus/Grafana lands.
+  # Prometheus needs a prometheus.yml config file (create at
+  # ./monitoring/prometheus.yml) with a scrape target of
+  # app:8080/actuator/prometheus.
+  # ---------------------------------------------------------------------
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: catalog-prometheus
+  #   volumes:
+  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   ports:
+  #     - "9090:9090"
+  #   networks:
+  #     - catalog-net
+  #
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: catalog-grafana
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     GF_SECURITY_ADMIN_PASSWORD: admin
+  #   volumes:
+  #     - grafana-data:/var/lib/grafana
+  #     - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+  #   depends_on:
+  #     - prometheus
+  #   networks:
+  #     - catalog-net
+
+networks:
+  catalog-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  # grafana-data:   # uncomment alongside the grafana service above
+
+# =============================================================================
+# USAGE:
+#   docker compose up --build      # build the app image and start everything
+#   docker compose up -d           # start in background after first build
+#   docker compose logs -f app     # tail the app logs
+#   docker compose down            # stop and remove containers (keeps volumes)
+#   docker compose down -v         # stop and also wipe the MySQL data volume
+#
+# VERIFY:
+#   curl http://localhost:8080/actuator/health
+#   curl http://localhost:8080/api/v1/products
+# =============================================================================
