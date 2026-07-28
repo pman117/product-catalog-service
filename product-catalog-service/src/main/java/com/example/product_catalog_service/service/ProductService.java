@@ -24,13 +24,13 @@ public class ProductService
     DaoProductInterface obj_dao_prod_interface;
 
     //Requried for @InjectMocks
-    public ProductService()
+    public ProductService(DaoProductInterface obj_dao_prod_interface)
     { 
-        
+        this.obj_dao_prod_interface= obj_dao_prod_interface;
     }
 
     @Transactional
-    public Optional<Product> createProduct(Product obj_product)
+    public Product createProduct(Product obj_product)
     {
         //empty body -> compiler error
             //missing return statement
@@ -44,7 +44,7 @@ public class ProductService
 
           
         //check if obj_product already exists 
-        if(obj_dao_prod_interface.findBySkuId(obj_product.getSkuId()) != null)
+        if(obj_dao_prod_interface.findBySkuId(obj_product.getSkuId()).isPresent())
         {
             //not going to insert already existing product  
             System.out.println("Product with skuId: " +obj_product.getSkuId() + "  ALREADY EXISTS so NOT going to insert said object");
@@ -59,9 +59,24 @@ public class ProductService
         obj_dao_prod_interface.insert(obj_product);
 
         
-        //return Optional<Product>
-        return Optional.ofNullable(obj_product);
+        //return object Product instance
+        return obj_product;
         
 
+    }
+
+    @Transactional(readOnly=true)
+    public Product getProduct(String obj_sku_id)
+    {
+        //if NOT find Product return said Product
+            // return  ProductNotFoundException
+        //else return said Product object instance
+        if(obj_dao_prod_interface.findBySkuId(obj_sku_id).isEmpty())
+        {
+            throw  new ProductNotFoundException(obj_sku_id);
+        }
+        else return  obj_dao_prod_interface.findBySkuId(obj_sku_id).get();
+        
+        
     }
 }

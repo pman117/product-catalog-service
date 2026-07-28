@@ -1,4 +1,4 @@
-
+package com.example.product_catalog_service.service;
 // ── JUnit 5 ──────────────────────────────────────────────────────────────────
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -8,10 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 // ── Mockito ───────────────────────────────────────────────────────────────────
 import org.mockito.Mock;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.ArgumentMatchers.any;
 
 // ── Domain ────────────────────────────────────────────────────────────────────
@@ -269,21 +271,112 @@ class ProductServiceTest
 
     
     @Test
-    void createProdWhenSkuIdExists()
+    void createProdWhenSkuIdExistsThrowsDuplicateSkuException()
     {
         
 
         //2) Stubbing behavior
-        when(obj_mock_runntime_proxy_dao_product_interface.findBySkuId("ABC-123")).thenReturn(Optional.of(new Product("ABC-123", "widget",BigDecimal.valueOf(95))));
+        when(obj_mock_runntime_proxy_dao_product_interface.findBySkuId("ABC-122")).thenReturn(Optional.of(new Product("ABC-122", "widget",BigDecimal.valueOf(95))));
 
         //3) invocation recording
             //JUnit assertions
-        assertThrows(DuplicateSkuException.class,()->obj_inject_mock_product_service.createProduct(new Product("ABC-123", "widget",BigDecimal.valueOf(95))), "skuId exists -> Expected DuplicateSkuException");
+        assertThrows(DuplicateSkuException.class,()->obj_inject_mock_product_service.createProduct(new Product("ABC-122", "widget",BigDecimal.valueOf(95))), "skuId exists -> Expected DuplicateSkuException");
 
         //4) Post-execution verification
-        verify(obj_mock_runntime_proxy_dao_product_interface,never()).insert(any(Product.class));
+        verify(obj_mock_runntime_proxy_dao_product_interface, never()).insert(any(Product.class));
         //verify(obj_mock_runntime_proxy_dao_product_interface,times(0)).insert(any(Product.class));
     }
+
+    @Test
+    void createProdWhenSkuIdNotExistsInsertsAndReturnsProduct()
+    {
+        //define+ declare instance object reference  + instantiate + initialize
+            //Product
+        Product obj_prod_mock_service_test = new Product("ABC-122", "widget", BigDecimal.valueOf(95));
+
+        //2) Stubbing behavior 
+            when(obj_mock_runntime_proxy_dao_product_interface
+                .findBySkuId(obj_prod_mock_service_test.getSkuId()))
+                .thenReturn(Optional.empty());
+
+            when(obj_mock_runntime_proxy_dao_product_interface
+                .insert(any()))
+                .thenReturn(1);
+
+        //Argument Captor
+            //ArgumentCaptor<Product> obj_arg_captor_product = ArgumentCaptor.forClass(Product.class);
+
+        //3) Invocation Recording
+       
+
+            Product obj_return_mock_prod_service =obj_inject_mock_product_service.createProduct(obj_prod_mock_service_test);
+
+        //4) Post-Execution Verification
+
+            assertEquals(obj_prod_mock_service_test,obj_return_mock_prod_service, "Service createProduct() expected to return object if(obj_dao_prod_interface.findBySkuId(obj_product.getSkuId()).isPresent())== false");
+
+            assertEquals("ABC-122",obj_return_mock_prod_service.getSkuId());
+
+            assertEquals("widget", obj_return_mock_prod_service.getProductName());
+
+            assertEquals(BigDecimal.valueOf(95), obj_return_mock_prod_service.getPrice());
+
         
-}
+            verify(obj_mock_runntime_proxy_dao_product_interface, times(1)).findBySkuId("ABC-122");
+
+            verify(obj_mock_runntime_proxy_dao_product_interface, times(1)).insert(any(Product.class));
+
+            
+    }
+
+    @Test
+    void retrieveGetProductSkuIdFoundReturnsProduct()
+    {
+        //define + declare instance object reference + instantiate + initiliaze
+            //Product
+            Product obj_prod_mock_service_test = new Product("ABC-122", "widget", BigDecimal.valueOf(95));
+
+        //2) Stubbing Behavior
+            when(obj_mock_runntime_proxy_dao_product_interface.findBySkuId(obj_prod_mock_service_test.getSkuId())).
+                thenReturn(Optional.of(obj_prod_mock_service_test));
+
+        //3) Invocation Recording 
+           Product obj_return_mock_prod_service =obj_inject_mock_product_service.getProduct(obj_prod_mock_service_test.getSkuId());
+
+        //4) Post-Execution Verification
+
+            assertEquals(obj_prod_mock_service_test, obj_return_mock_prod_service, "Service getProduct()  expected to return object if obj_mock_runntime_proxy_dao_product_interface.findBySkuId(obj_prod_mock_service_test.getSkuId()).isPresent()==true");
+            
+            assertEquals("ABC-122",obj_return_mock_prod_service.getSkuId());
+
+            assertEquals("widget", obj_return_mock_prod_service.getProductName());
+
+            assertEquals(BigDecimal.valueOf(95), obj_return_mock_prod_service.getPrice());
+
+            verify(obj_mock_runntime_proxy_dao_product_interface, times(2)).findBySkuId("ABC-122");
+    }
+
+    @Test
+    void retrieveGetProductSkuIdNotFoundReturnsNull()
+    {
+        //define + declare instance object reference + instantiate + initiliaze
+            //Product
+            Product obj_prod_mock_service_test = new Product("ABC-122", "widget", BigDecimal.valueOf(95));
+
+        //2) Stubbing Behavior
+            when(obj_mock_runntime_proxy_dao_product_interface.findBySkuId(obj_prod_mock_service_test.getSkuId())).
+                thenReturn(Optional.empty());
+
+        //3) Invocation Recording 
+          // Product obj_return_mock_prod_service =obj_inject_mock_product_service.getProduct(obj_prod_mock_service_test);
+
+        //4) Post-Execution Verification
+
+            assertThrows(ProductNotFoundException.class,()-> obj_inject_mock_product_service.getProduct(obj_prod_mock_service_test.getSkuId()), "Service getProduct()  expected to throw ProductNotFoundException object if obj_mock_runntime_proxy_dao_product_interface.findBySkuId(obj_prod_mock_service_test.getSkuId()).isEmpty() == true");
+            
+        
+
+            //verify(obj_mock_runntime_proxy_dao_product_interface, times(1)).findBySkuId("ABC-122")
+    }
+}   
                                 
