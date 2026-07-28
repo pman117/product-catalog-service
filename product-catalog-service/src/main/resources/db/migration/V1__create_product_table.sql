@@ -1,0 +1,7 @@
+CREATE TABLE product(
+    skuId VARCHAR(255)   PRIMARY KEY,
+    productName   VARCHAR(25)    NOT NULL,
+    price  DECIMAL(65,30) NOT NULL,
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    
+);
