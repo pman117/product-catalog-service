@@ -77,7 +77,7 @@ class ProductTests
 		//assertAll to group checks
 			assertAll("inputDomainEquivalencePartitionClassValid",
 						()-> assertEquals("ABC-123",obj_product_test.getSkuId()),
-						()-> assertEquals("widget",obj_product_test.getName()),
+						()-> assertEquals("widget",obj_product_test.getProductName()),
 						()-> assertEquals(BigDecimal.valueOf(95),obj_product_test.getPrice())
 					);
 				
@@ -93,7 +93,7 @@ class ProductTests
 		
 		assertAll("inputDomainEquivalencePartitionClassBoundaryLow",
 					()-> assertEquals("A1", obj_product_test.getSkuId()),
-					()-> assertEquals("a", obj_product_test.getName()),
+					()-> assertEquals("a", obj_product_test.getProductName()),
 					()-> assertEquals(BigDecimal.valueOf(0.01), obj_product_test.getPrice())
 				
 				);
@@ -108,7 +108,7 @@ class ProductTests
 		
 		assertAll("inputDomainEquivalencePartitionClassBoundaryHigh",
 					()-> assertEquals("ABC-999", obj_product_test.getSkuId()),
-					()-> assertEquals("a".repeat(25), obj_product_test.getName()),
+					()-> assertEquals("a".repeat(25), obj_product_test.getProductName()),
 					()-> assertEquals(BigDecimal.valueOf(Long.MAX_VALUE), obj_product_test.getPrice())
 				
 				);
@@ -118,17 +118,17 @@ class ProductTests
 	void inputDomainEquivalencePartitionClassInvalid()
 	{
 		assertAll("inputDomainEquivalencePartitionClassInvalid",
-					()-> assertThrows(IllegalArgumentException.class,()-> new Product(null,"widget",BigDecimal.valueOf(95)),"SKU_ID is null"),
-					()-> assertThrows(IllegalArgumentException.class,()-> new Product("","widget",BigDecimal.valueOf(95)),"SKU_ID is empty String"),
-					()-> assertThrows(IllegalArgumentException.class,()-> new Product(" ","widget", BigDecimal.valueOf(95)),"SKU_ID is blank white space"),
-					()-> assertThrows(IllegalArgumentException.class,()-> new Product("abc#123","widget", BigDecimal.valueOf(95)),"SKU_ID has illegal characters"),
-					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123",null, BigDecimal.valueOf(95)),"Name is null"),
-					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123","", BigDecimal.valueOf(95)),"Name is empty String"),
-					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123"," ", BigDecimal.valueOf(95)),"Name is blank empty whitespace"),
-					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123","a".repeat(26), BigDecimal.valueOf(95)),"Length of Name is > 25 characters"),
-					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123","widget", BigDecimal.valueOf(0)),"Price is 0"),
-					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123","widget", null),"Price is null"),
-					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123","widget", BigDecimal.valueOf(-11)),"Price < 0")
+					()-> assertThrows(IllegalArgumentException.class,()-> new Product(null,"widget",BigDecimal.valueOf(95)),"skuId is null"),
+					()-> assertThrows(IllegalArgumentException.class,()-> new Product("","widget",BigDecimal.valueOf(95)),"skuId is empty String"),
+					()-> assertThrows(IllegalArgumentException.class,()-> new Product(" ","widget", BigDecimal.valueOf(95)),"skuId is blank white space"),
+					()-> assertThrows(IllegalArgumentException.class,()-> new Product("abc#123","widget", BigDecimal.valueOf(95)),"skuId has illegal characters"),
+					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123",null, BigDecimal.valueOf(95)),"productName is null"),
+					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123","", BigDecimal.valueOf(95)),"productName is empty String"),
+					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123"," ", BigDecimal.valueOf(95)),"productName is blank empty whitespace"),
+					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123","a".repeat(26), BigDecimal.valueOf(95)),"Length of productName is > 25 characters"),
+					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123","widget", BigDecimal.valueOf(0)),"price is 0"),
+					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123","widget", null),"price is null"),
+					()-> assertThrows(IllegalArgumentException.class,()-> new Product("ABC-123","widget", BigDecimal.valueOf(-11)),"price < 0")
 				
 				
 				

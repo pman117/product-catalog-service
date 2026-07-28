@@ -82,7 +82,7 @@ public class Product
 		return skuId;
 	}
 	
-	public String getName()
+	public String getProductName()
 	{
 		return productName;
 	}
