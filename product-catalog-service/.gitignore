@@ -58,3 +58,4 @@ Thumbs.db
 # Java
 *.class
 *.ja
+application.properties
