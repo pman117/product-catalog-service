@@ -53,7 +53,7 @@ public class DaoProductImplementationJdbc implements DaoProductInterface,Initial
         SqlParameterSource objMapSqlParamSource = new MapSqlParameterSource()
             .addValue("skuId",obj_product.getSkuId() )
             //.addValue("skuId", UUID.randomUUID().toString())
-            .addValue("productName", obj_product.getName())
+            .addValue("productName", obj_product.getProductName())
             .addValue("price", obj_product.getPrice());
 
         //NamedParameterJdbcTemplate + return number of rows affected

@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.annotation.DirtiesContext;
 
 //why Testcontainers
     //problems we face whenm testing source code  that talks to external systems(DB, message bus, S3):
@@ -175,6 +176,8 @@ import org.slf4j.LoggerFactory;
                 //withInitScript(...)
                 //copyFileToContainer(...),withClasspathResourceMapping(...)
                 //waitingFor(Wait.forLogMessage(".*ready.*\\n",1)) or waitingFor(Wait.forListeningPort())
+
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)  // ← ADD THIS so full Spring context is discarded after the class runs and thus canNOT pollute  @WebMvcTest slice
 @Testcontainers
 //integration test with @SpringBootTest
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
