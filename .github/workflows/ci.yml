@@ -1,60 +1,106 @@
-name: CI — Product Catalog Service
+# FILE: .github/workflows/ci.yml   (at GIT ROOT)
+
+name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, "feature/**" ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
+  workflow_dispatch:
 
-defaults:
-  run:
-    working-directory: product-catalog-service
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
+    name: Build + Unit/Slice Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./product-catalog-service
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: "21"
+          distribution: "temurin"
 
-      - name: Cache Gradle packages
+      - name: Cache Gradle caches and wrapper
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('product-catalog-service/**/build.gradle.kts', 'product-catalog-service/**/settings.gradle.kts') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('product-catalog-service/**/*.gradle.kts', 'product-catalog-service/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Grant execute permission for gradlew
+      - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Run unit tests (domain + service layers)
-        run: ./gradlew test --no-daemon
+      - name: Compile ALL source sets
+        run: ./gradlew --no-daemon compileJava compileTestJava compileIntegrationTestJava
+        # Exists because of a real bug: bootRun compiles only src/main, so a
+        # missing import in src/integrationTest (the @DirtiesContext incident)
+        # was invisible until something compiled that source set.
 
-      - name: Run persistence integration tests (Testcontainers MySQL)
-        run: ./gradlew integrationTest --no-daemon
+      - name: Unit + controller slice tests
+        run: ./gradlew --no-daemon test
 
-      - name: Build application JAR
-        run: ./gradlew bootJar --no-daemon -x test
+      - name: JaCoCo coverage report
+        run: ./gradlew --no-daemon jacocoTestReport
 
-      - name: Build Docker image (validation only, not pushed)
-        run: docker build -t product-catalog-service:ci-check .
-
-      - name: Publish test results
+      - name: Upload test + coverage reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results
-          path: |
-            product-catalog-service/build/reports/tests/
-            product-catalog-service/build/test-results/
+          name: test-and-coverage-reports
+          path: product-catalog-service/build/reports/
           retention-days: 14
+
+  integration-tests:
+    name: Integration Tests (Testcontainers MySQL 8.1)
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    defaults:
+      run:
+        working-directory: ./product-catalog-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('product-catalog-service/**/*.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Verify Docker is available
+        run: docker version
+
+      - run: chmod +x gradlew
+
+      - name: Run Testcontainers integration tests
+        run: ./gradlew --no-daemon integrationTest
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-reports
+          path: product-catalog-service/build/reports/tests/integrationTest/
+          retention-days: 14
+
