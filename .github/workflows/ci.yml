@@ -57,7 +57,7 @@ jobs:
         run: ./gradlew --no-daemon jacocoTestReport
 
       - name: Upload test + coverage reports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-and-coverage-reports
@@ -97,7 +97,7 @@ jobs:
       - name: Run Testcontainers integration tests
         run: ./gradlew --no-daemon integrationTest
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: integration-test-reports
